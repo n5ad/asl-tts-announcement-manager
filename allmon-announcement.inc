@@ -1,7 +1,8 @@
 <div>
 <?php
 // allmon-announcement.inc
-// Allmon3 Version - Updated July 08, 2026 - Added variable leading pause support
+// Allmon3 Version - Updated for native ASL3 asl3-tts (piper)
+// Voices now live in /var/lib/piper-tts/
 ?>
 <hr style="margin-top:30px;">
 <div id="bottom_cron_section" style="margin-top:20px;">
@@ -13,16 +14,16 @@
     <br><br>
     <label for="tts_voice">Select voice model:</label>
     <select id="tts_voice" class="submit" style="width: 250px;">
-        <option value="/opt/piper/voices/en_US-lessac-medium.onnx">Lessac (Medium, American female)</option>
-        <option value="/opt/piper/voices/en_US-joe-medium.onnx">Joe (Medium, American male)</option>
-        <option value="/opt/piper/voices/en_US-amy-medium.onnx">Amy (Medium, American female)</option>
-        <option value="/opt/piper/voices/en_US-kristin-medium.onnx">Kristin (Medium, American female)</option>
-        <option value="/opt/piper/voices/en_US-libritts_r-medium.onnx">Libritts_r (Medium, British female)</option>
-        <option value="/opt/piper/voices/en_US-ryan-low.onnx">Ryan (low, British female)</option>
+        <option value="/var/lib/piper-tts/en_US-amy-low.onnx">Amy (Low, American female) — ASL default</option>
+        <option value="/var/lib/piper-tts/en_US-lessac-low.onnx">Lessac (Low, American female)</option>
+        <option value="/var/lib/piper-tts/en_US-joe-low.onnx">Joe (Low, American male)</option>
+        <option value="/var/lib/piper-tts/en_US-kristin-low.onnx">Kristin (Low, American female)</option>
+        <option value="/var/lib/piper-tts/en_US-libritts_r-medium.onnx">Libritts_r (Medium, multi-speaker)</option>
+        <option value="/var/lib/piper-tts/en_US-ryan-low.onnx">Ryan (Low, American male)</option>
     </select>
     <button id="generate_tts" class="submit">Generate WAV File</button>
     <div id="tts_status" style="margin-top:10px; font-weight:bold; color:#28a745;"></div>
-    
+   
     <!-- MP3 Upload Section -->
     <h4>Alternatively, you may upload your own MP3/WAV files created elsewhere</h4>
     <h4>you may use these for scheduling or immediate playback</h4>
@@ -32,7 +33,6 @@
     </div>
     <div id="upload_status" style="margin-top:10px; font-weight:bold;"></div>
     <br><br>
-
     <h3>Announcement Scheduler</h3>
     <select id="mp3_select" class="submit" style="border:2px solid #444; width: 280px;">
         <option value="">-- Select Audio File (MP3 or WAV) --</option>
@@ -42,14 +42,12 @@
     <input type="button" class="submit" value="Local Play" id="local_play_mp3" style="background:#28a745;color:white;border:1px solid #1e7e34;">
     <input type="button" class="submit" value="Global Play" id="global_play_mp3" style="background:#fd7e14;color:white;border:1px solid #e06b00;">
     <br><br>
-
     <select id="ul_select" class="submit" style="border:2px solid #444; width: 280px;">
         <option value="">-- Select .ul Announcement --</option>
     </select>
     <input type="button" class="submit" value="Play Now" id="run_ul">
     <input type="button" class="submit" value="Delete .ul" id="delete_ul" style="background:#dc3545;color:white;border:1px solid #c82333;">
     <br><br>
-
     <h3>Cron Manager</h3>
     <div style="overflow-x:auto; margin-top:10px;">
         <table id="cron_table" style="width:100%; border-collapse:collapse; border:1px solid #666; font-size:0.95em;">
@@ -71,7 +69,6 @@
         </table>
     </div>
 </div>
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function () {
@@ -95,7 +92,6 @@ $(document).ready(function () {
             error: function() { $("#upload_status").text("❌ Upload failed.").css("color", "red"); }
         });
     });
-
     function loadMP3Dropdown() {
         $.getJSON("/announcement-manager/list_mp3.php", function(files) {
             $("#mp3_select").empty().append($("<option>").val("").text("-- Select Audio File (MP3/WAV) --"));
@@ -103,7 +99,6 @@ $(document).ready(function () {
         });
     }
     loadMP3Dropdown();
-
     function loadULDropdown() {
         $.getJSON("/announcement-manager/list_ul.php", function(files) {
             $("#ul_select").empty().append($("<option>").val("").text("-- Select .ul Announcement --"));
@@ -111,48 +106,40 @@ $(document).ready(function () {
         });
     }
     loadULDropdown();
-
     // ==================== Install Announcement (with pause) ====================
     $("#install_announcement").on('click', function() {
         let mp3 = $("#mp3_select").val();
         if (!mp3) { alert("Please select an MP3 file."); return; }
-
         let min = prompt("Minute:", "45"); if(min===null) return;
         let hour = prompt("Hour:", "7-20"); if(hour===null) return;
         let dom = prompt("DOM:", "*"); if(dom===null) return;
         let month = prompt("Month:", "*"); if(month===null) return;
         let dow = prompt("DOW:", "*"); if(dow===null) return;
-
-        let week = "*"; 
+        let week = "*";
         let useNth = false;
         if (/^[1-7]$/.test(dow.trim())) {
             week = prompt("Week of month? (* = every, 1-5 = specific)", "*");
             if (week !== null && /^[1-5]$/.test(week.trim())) useNth = true;
         }
-
         let desc = prompt("Description:", "Scheduled announcement");
         if (!desc || !desc.trim()) { alert("Description required."); return; }
-
         let scopeInput = prompt("Playback scope? (local or global)", "local");
         let scope = (scopeInput && scopeInput.trim().toLowerCase() === "global") ? "global" : "local";
         if (scope === "global" && !confirm("GLOBAL → will play on ALL connected nodes. Continue?")) return;
-
         let modeChoice = prompt("Play Mode?\n\npolite = Wait for clear channel (recommended)\npriority = Play immediately", "polite");
         let mode = (modeChoice && modeChoice.trim().toLowerCase() === "priority") ? "priority" : "polite";
-
         // === NEW: Leading Pause Prompt ===
         let pause = prompt("Leading pause before announcement (seconds)?\n0 = no pause, 1 = 1 second, 1.5 = 1.5 seconds, etc.", "0");
         if (pause === null) return;
         pause = parseFloat(pause) || 0;
-
         $.post("/announcement-manager/announcement.php", {
-            file: mp3, 
+            file: mp3,
             min, hour, dom, month, dow, week,
-            use_nth: useNth ? 1 : 0, 
-            desc, 
-            scope, 
+            use_nth: useNth ? 1 : 0,
+            desc,
+            scope,
             mode,
-            pause: pause   // <-- This is passed to announcement.php
+            pause: pause // <-- This is passed to announcement.php
         }, function(data) {
             alert(data);
             loadULDropdown();
@@ -160,7 +147,6 @@ $(document).ready(function () {
             loadMP3Dropdown();
         });
     });
-
     // ==================== Cron List with Smart Play Now ====================
     function loadCronList() {
         $.getJSON("/announcement-manager/list_cron.php", function(crons) {
@@ -226,7 +212,6 @@ $(document).ready(function () {
         });
     }
     loadCronList();
-
     // ==================== TTS Generate ====================
     $("#generate_tts").on('click', function() {
         let text = $("#tts_text").val().trim();
@@ -251,33 +236,28 @@ $(document).ready(function () {
                 $("#tts_status").text("Failed to generate WAV - check logs").css("color", "#dc3545");
             });
     });
-
     // ==================== Other Buttons ====================
     $("#delete_mp3").on('click', function() {
         let f = $("#mp3_select").val();
         if (!f || !confirm("Delete " + f + "?")) return;
         $.post("/announcement-manager/delete_file.php", {type:"mp3", file:f}, function(r){ alert(r); loadMP3Dropdown(); });
     });
-
     $("#local_play_mp3").on('click', function() {
         let f = $("#mp3_select").val();
         if (!f) { alert("Select an MP3/WAV file first"); return; }
         $.post("/announcement-manager/run_announcement.php", { file: f, source: "mp3" }, function(r){ alert(r); });
     });
-
     $("#global_play_mp3").on('click', function() {
         let f = $("#mp3_select").val();
         if (!f) { alert("Select an MP3/WAV file first"); return; }
         if (!confirm("WARNING: This will play on this node AND all linked nodes.\n\nContinue?")) return;
         $.post("/announcement-manager/globalplay.php", { file: f, source: "mp3" }, function(r){ alert(r); });
     });
-
     $("#run_ul").on('click', function() {
         let f = $("#ul_select").val();
         if (!f) { alert("Select announcement first"); return; }
         $.post("/announcement-manager/run_announcement.php", { file: f, source: "ul" }, function(r){ alert(r); });
     });
-
     $("#delete_ul").on('click', function() {
         let f = $("#ul_select").val();
         if (!f || !confirm("Delete " + f + "?")) return;
@@ -285,7 +265,6 @@ $(document).ready(function () {
     });
 });
 </script>
-
 <style>
     .small-btn { font-size:0.9em; padding:4px 8px; margin:0 3px; cursor:pointer; border:none; border-radius:4px; }
     .play { background:#17a2b8; color:white; }
