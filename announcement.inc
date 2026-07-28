@@ -15,7 +15,7 @@
 ">
     <h1 style="text-align:center; color:#2c3e50; margin-top:0;">Announcement Management System</h1>
     <hr style="border: 1px solid #bdc3c7; margin: 20px 0;">
-    <!-- ====================== PIPER TTS SECTION ====================== -->
+    <!-- ====================== ASL TTS SECTION ====================== -->
     <div class="section" style="
         background: #ffffff;
         border: 2px solid #3498db;
@@ -23,7 +23,7 @@
         padding: 20px;
         margin-bottom: 25px;
     ">
-        <h3 style="color:#2980b9; margin-top:0;">Generate Announcement with Piper TTS</h3>
+        <h3 style="color:#2980b9; margin-top:0;">Generate Announcement with ASL-TTS</h3>
      
         <textarea id="tts_text" rows="4" cols="70"
             placeholder="Enter the text you want to convert to speech. Commas and periods are acceptable, no other punctuation..."></textarea>
