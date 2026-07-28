@@ -541,6 +541,23 @@ download_voice "en_US-ryan-low.onnx"          "en/en_US/ryan/low/en_US-ryan-low.
 chown root:root /var/lib/piper-tts/*.onnx /var/lib/piper-tts/*.onnx.json 2>/dev/null || true
 chmod 644 /var/lib/piper-tts/*.onnx /var/lib/piper-tts/*.onnx.json 2>/dev/null || true
 echo "Native ASL3 TTS + extra voices ready in /var/lib/piper-tts"
+# === Set slower speaking rate for lessac (length_scale = 1.2) ===
+if [[ -f "/var/lib/piper-tts/en_US-lessac-low.onnx.json" ]]; then
+    echo "Setting Piper voice speed (length_scale = 1.2) for lessac-low"
+    JSON_FILE="/var/lib/piper-tts/en_US-lessac-low.onnx.json"
+
+    cp -f "$JSON_FILE" "${JSON_FILE}.orig" 2>/dev/null || true
+    sed -i 's/"length_scale"[[:space:]]*:[[:space:]]*[0-9.]\+/"length_scale": 1.2/' "$JSON_FILE"
+
+    if grep -q '"length_scale": 1.2' "$JSON_FILE"; then
+        echo "Successfully set length_scale to 1.2 for lessac-low"
+    else
+        echo "Warning: length_scale was not changed for lessac-low"
+    fi
+else
+    echo "lessac-low JSON not found → skipping length_scale adjustment"
+fi
+
 # Optional cleanup of old custom Piper install (comment out if you still want to keep it)
 if [[ -d /opt/piper ]]; then
     echo "Old /opt/piper installation detected."
