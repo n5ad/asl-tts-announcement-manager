@@ -1,7 +1,8 @@
 <?php
 // announcement.inc
 // Loaded only after Supermon login
-// Created by N5AD - Updated June 15, 2026
+// Created by N5AD - Updated for native ASL3 asl3-tts (piper)
+// Voices now live in /var/lib/piper-tts/
 ?>
 <?php if (isset($_SESSION['sm61loggedin']) && $_SESSION['sm61loggedin'] === true) { ?>
 <div id="announcement-manager" style="
@@ -23,26 +24,26 @@
         margin-bottom: 25px;
     ">
         <h3 style="color:#2980b9; margin-top:0;">Generate Announcement with Piper TTS</h3>
-      
+     
         <textarea id="tts_text" rows="4" cols="70"
             placeholder="Enter the text you want to convert to speech. Commas and periods are acceptable, no other punctuation..."></textarea>
         <br><br>
-      
+     
         <label for="tts_filename">Filename (letters, numbers, hyphens, underscores only):</label><br>
         <input type="text" id="tts_filename" placeholder="e.g., myannounce" style="width: 280px;">
         <br><br>
-      
+     
         <label for="tts_voice">Voice Model:</label><br>
         <select id="tts_voice" class="submit" style="width: 320px;">
-            <option value="/opt/piper/voices/en_US-lessac-medium.onnx">Lessac (American female)</option>
-            <option value="/opt/piper/voices/en_US-joe-medium.onnx">Joe (American male)</option>
-            <option value="/opt/piper/voices/en_US-amy-medium.onnx">Amy (American female)</option>
-            <option value="/opt/piper/voices/en_US-kristin-medium.onnx">Kristin (American female)</option>
-            <option value="/opt/piper/voices/en_US-libritts_r-medium.onnx">Libritts (British female)</option>
-            <option value="/opt/piper/voices/en_US-ryan-low.onnx">Ryan (British female)</option>
+            <option value="/var/lib/piper-tts/en_US-amy-low.onnx">Amy (Low, American female) — ASL default</option>
+            <option value="/var/lib/piper-tts/en_US-lessac-low.onnx">Lessac (Low, American female)</option>
+            <option value="/var/lib/piper-tts/en_US-joe-low.onnx">Joe (Low, American male)</option>
+            <option value="/var/lib/piper-tts/en_US-kristin-low.onnx">Kristin (Low, American female)</option>
+            <option value="/var/lib/piper-tts/en_US-libritts_r-medium.onnx">Libritts_r (Medium, multi-speaker)</option>
+            <option value="/var/lib/piper-tts/en_US-ryan-low.onnx">Ryan (Low, American male)</option>
         </select>
         <br><br>
-      
+     
         <button id="generate_tts" class="submit">Generate WAV File</button>
         <div id="tts_status" style="margin-top:12px; font-weight:bold;"></div>
     </div>
@@ -69,7 +70,7 @@
                style="background:#1e252f; color:#e0e0e0;">
         <button id="upload_btn" class="submit">Upload to /mp3/</button>
     </div>
-  
+ 
     <div id="upload_status" style="margin-top:12px; font-weight:bold;"></div>
 </div>
     <!-- ====================== SCHEDULER & PLAYBACK ====================== -->
@@ -81,11 +82,11 @@
         margin-bottom: 25px;
     ">
         <h3 style="color:#8e44ad;">Announcement Scheduler</h3>
-      
+     
         <select id="mp3_select" class="submit" style="width: 320px; border:2px solid #444;">
             <option value="">-- Select Audio File --</option>
         </select>
-      
+     
         <div style="margin:15px 0;">
             <input type="button" class="submit" value="Install Announcement" id="install_announcement">
             <input type="button" class="submit" value="Delete" id="delete_mp3" style="background-color:#dc3545; color:white;">
@@ -96,7 +97,7 @@
         <select id="ul_select" class="submit" style="width: 320px; border:2px solid #444;">
             <option value="">-- Select Announcement --</option>
         </select>
-      
+     
         <div style="margin:12px 0;">
             <input type="button" class="submit" value="Play Now" id="run_ul">
             <input type="button" class="submit" value="Delete" id="delete_ul" style="background-color:#dc3545; color:white;">
@@ -110,7 +111,7 @@
         padding: 20px;
     ">
         <h3 style="color:#e67e22;">Cron Manager</h3>
-      
+     
         <table id="cron_table" border="1" cellpadding="8" style="
             width:100%;
             border-collapse: collapse;
@@ -295,11 +296,9 @@ $("#upload_btn").click(function() {
         );
         if (modeChoice === null) return;
         let mode = (modeChoice.trim().toLowerCase() === "priority") ? "priority" : "polite";
-
         // === Pause Prompt (only change) ===
         let pause = prompt("Leading pause before announcement (seconds)?\n0 = no pause, 1.5 = 1.5 seconds, etc.", "0");
-        if (pause === null) return;  // user cancelled
-
+        if (pause === null) return; // user cancelled
         // Send to announcement.php
         $.post("/announcement-manager/announcement.php", {
             file: mp3,
@@ -341,7 +340,7 @@ $("#upload_btn").click(function() {
                     .css({
                         "background-color": isEnabled ? "#28a745" : "#dc3545",
                         "color": "white",
-                       
+                      
                         "margin-right": "8px"
                     })
                     .click(function() {
